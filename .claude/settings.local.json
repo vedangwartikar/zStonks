@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip show *)",
+      "Bash(python *)",
+      "Bash(curl -sL https://ranaroussi.github.io/yfinance/ -o /tmp/yf_docs.html)",
+      "Read(//tmp/**)",
+      "Bash(curl -sL https://raw.githubusercontent.com/ranaroussi/yfinance/main/README.md -o /tmp/yf_readme.md)",
+      "WebFetch(domain:ranaroussi.github.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(PYTHONIOENCODING=utf-8 python *)",
+      "Bash(curl *)",
+      "Bash(TELEGRAM_BOT_TOKEN='8732039514:AAE-nS7tf7_wsphhOFbCZyt24FS_Js9n9OU' TELEGRAM_CHAT_ID='1380196323' PYTHONIOENCODING=utf-8 python *)"
+    ]
+  }
+}

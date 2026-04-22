@@ -1,0 +1,50 @@
+# zStonks — every 2 hours from market open, weekdays.
+#
+# Cron times are UTC, pinned to Eastern Daylight Time (EDT, UTC-4).
+# During EST (Nov–Mar) every slot fires 1 hour later in ET / PT.
+# Fix by shifting each cron +1 hour UTC, or accept the drift.
+#
+# Setup:
+#   1. Create a Telegram bot via @BotFather → get TELEGRAM_BOT_TOKEN.
+#   2. Message your bot, then visit https://api.telegram.org/bot<TOKEN>/getUpdates
+#      to find your chat id → set TELEGRAM_CHAT_ID.
+#   3. Repo → Settings → Secrets and variables → Actions → New repository secret
+#      Add both TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.
+#   4. Optional: add repo Variable (not Secret) WATCHLIST=AAPL,MSFT,NVDA,...
+
+name: digest
+
+on:
+  schedule:
+    - cron: '30 13 * * 1-5'   # 09:30 ET / 06:30 PT — market open
+    - cron: '30 15 * * 1-5'   # 11:30 ET / 08:30 PT
+    - cron: '30 17 * * 1-5'   # 13:30 ET / 10:30 PT
+    - cron: '30 19 * * 1-5'   # 15:30 ET / 12:30 PT — 30 min before close
+    - cron: '30 21 * * 1-5'   # 17:30 ET / 14:30 PT — post-close recap
+  workflow_dispatch: {}
+
+concurrency:
+  group: digest-${{ github.event.schedule || 'manual' }}
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Send digest
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WATCHLIST: ${{ vars.WATCHLIST }}
+        run: python digest.py
