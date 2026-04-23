@@ -275,6 +275,18 @@ def _news_title(item):
     return content.get("title")
 
 
+def _news_url(item):
+    """Extract URL from yfinance news item, old or new shape."""
+    if "link" in item:
+        return item.get("link")
+    content = item.get("content") or {}
+    for key in ("clickThroughUrl", "canonicalUrl"):
+        val = content.get(key) or {}
+        if isinstance(val, dict) and val.get("url"):
+            return val["url"]
+    return None
+
+
 def _gemini_summarize_headlines(headlines):
     """One batched Gemini call to summarize N headlines. Returns list of summaries aligned to input."""
     key = os.environ.get("GEMINI_API_KEY")
@@ -350,22 +362,24 @@ def section_znews():
         print(f"[warn] znews fetch: {e}", file=sys.stderr)
         return None
 
-    headlines = []
+    items = []  # list of (title, url)
     for n in news[:5]:
         t = _news_title(n)
         if t:
-            headlines.append(t)
-    if not headlines:
+            items.append((t, _news_url(n)))
+    if not items:
         return None
 
-    summaries = _gemini_summarize_headlines(headlines)
+    summaries = _gemini_summarize_headlines([t for t, _ in items])
     if not summaries:
         return None
 
     lines = ["*zNews*"]
-    for i, s in enumerate(summaries, 1):
-        if s:
-            lines.append(f"{i}. {s}")
+    for i, (summary, (_, url)) in enumerate(zip(summaries, items), 1):
+        if not summary:
+            continue
+        link = f" [🔗]({url})" if url else ""
+        lines.append(f"{i}. {summary}{link}")
     return "\n".join(lines) if len(lines) > 1 else None
 
 
